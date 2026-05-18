@@ -849,7 +849,7 @@ async function runSearch() {
           return renderCard(r);
         }).join('');
         
-        var proUrl = 'https://lukassbrad.lemonsqueezy.com/buy/pro';
+        var proUrl = 'https://bradauto.lemonsqueezy.com/buy/hn-startup-hunter-pro';
         
         var overlay = '<div class="paywall-wrap">' +
           '<div class="cards-grid paywall-blur">' + ghostCards + '</div>' +
@@ -889,7 +889,7 @@ async function exportCSV() {
   if (currentResults.length > 20) {
     showToast('CSV export is a Pro feature — upgrade at $9/month');
     setTimeout(function() {
-      window.open('https://lukassbrad.lemonsqueezy.com/buy/pro', '_blank');
+      window.open('https://bradauto.lemonsqueezy.com/buy/hn-startup-hunter-pro', '_blank');
     }, 1500);
     return;
   }
