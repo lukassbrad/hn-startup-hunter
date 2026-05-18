@@ -451,6 +451,81 @@
   }
   .card-website:hover { color: var(--hn-orange); }
 
+  /* ── Paywall ── */
+  .paywall-wrap {
+    position: relative;
+    margin-top: 12px;
+  }
+  .paywall-blur {
+    filter: blur(4px);
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.5;
+  }
+  .paywall-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(to bottom, rgba(249,250,251,0) 0%, rgba(249,250,251,0.92) 20%, rgba(249,250,251,1) 50%);
+    padding: 2rem 1rem 1rem;
+  }
+  .paywall-card {
+    background: #fff;
+    border: 1.5px solid #ff6600;
+    border-radius: 16px;
+    padding: 28px 32px;
+    max-width: 440px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(255,102,0,0.12);
+  }
+  .paywall-card h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: #111827;
+  }
+  .paywall-card p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .paywall-card ul {
+    text-align: left;
+    list-style: none;
+    margin: 0 0 20px;
+    padding: 0;
+  }
+  .paywall-card ul li {
+    font-size: 0.875rem;
+    color: #374151;
+    padding: 4px 0;
+  }
+  .paywall-card ul li::before { content: "✓ "; color: #ff6600; font-weight: 700; }
+  .paywall-btn {
+    display: inline-block;
+    background: #ff6600;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 14px 32px;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.2s;
+    width: 100%;
+  }
+  .paywall-btn:hover { background: #e55a00; }
+  .paywall-count {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-top: 10px;
+  }
+
+
   /* Loading */
   .loading-state { display: none; text-align: center; padding: 48px 20px; }
   .loading-state.active { display: block; }
@@ -757,7 +832,45 @@ async function runSearch() {
     } else {
       document.getElementById('resultsMeta').innerHTML =
         'Found <strong>' + data.count + '</strong> matching companies from <strong>' + data.total_scanned + '</strong> posts scanned';
-      document.getElementById('cardsGrid').innerHTML = data.results.map(renderCard).join('');
+      var FREE_LIMIT = 20;
+      var allResults = data.results;
+      var freeResults = allResults.slice(0, FREE_LIMIT);
+      var lockedCount = allResults.length - FREE_LIMIT;
+      
+      if (allResults.length <= FREE_LIMIT) {
+        // All results fit in free tier
+        document.getElementById('cardsGrid').innerHTML = freeResults.map(renderCard).join('');
+      } else {
+        // Show free results + paywall
+        var paywallHtml = freeResults.map(renderCard).join('');
+        
+        // Build ghost cards for blur effect
+        var ghostCards = allResults.slice(FREE_LIMIT, FREE_LIMIT + 4).map(function(r) {
+          return renderCard(r);
+        }).join('');
+        
+        var proUrl = 'https://lukassbrad.lemonsqueezy.com/buy/pro';
+        
+        var overlay = '<div class="paywall-wrap">' +
+          '<div class="cards-grid paywall-blur">' + ghostCards + '</div>' +
+          '<div class="paywall-overlay">' +
+            '<div class="paywall-card">' +
+              '<h3>🔒 ' + lockedCount + ' more companies hidden</h3>' +
+              '<p>Upgrade to Pro to unlock all <strong>' + allResults.length + '</strong> matching companies — plus email export, email-only filter, and multi-month search.</p>' +
+              '<ul>' +
+                '<li>All ' + allResults.length + ' matching companies (not just 20)</li>' +
+                '<li>CSV export with email column</li>' +
+                '<li>Filter: companies with direct email only</li>' +
+                '<li>Search any HN hiring thread, not just latest</li>' +
+              '</ul>' +
+              '<a href="' + proUrl + '" target="_blank" class="paywall-btn">Unlock Pro — $9/month →</a>' +
+              '<p class="paywall-count">Cancel anytime · Instant access</p>' +
+            '</div>' +
+          '</div>' +
+        '</div>';
+        
+        document.getElementById('cardsGrid').innerHTML = paywallHtml + overlay;
+      }
       document.getElementById('resultsWrap').style.display = 'block';
     }
   } catch (err) {
@@ -773,6 +886,13 @@ async function runSearch() {
 
 async function exportCSV() {
   if (!currentResults.length) { showToast('Search first to get results'); return; }
+  if (currentResults.length > 20) {
+    showToast('CSV export is a Pro feature — upgrade at $9/month');
+    setTimeout(function() {
+      window.open('https://lukassbrad.lemonsqueezy.com/buy/pro', '_blank');
+    }, 1500);
+    return;
+  }
   try {
     var resp = await fetch('/export', {
       method: 'POST',
