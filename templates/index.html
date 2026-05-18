@@ -4,356 +4,787 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HN Startup Hunter — Find Companies Hiring on Hacker News</title>
+<meta name="description" content="Search every 'Who is Hiring?' post on Hacker News by skills, tech stack, and location. Find real startup leads in seconds.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --hn-orange: #ff6600;
+    --hn-orange-dark: #e55a00;
+    --hn-orange-light: #fff4ee;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --border: #e5e7eb;
+    --border-hover: #d1d5db;
+    --bg: #f9fafb;
+    --card-bg: #ffffff;
+    --radius: 12px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.10), 0 4px 8px rgba(0,0,0,0.04);
+  }
+
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: #0f0f0f;
-    color: #e8e8e8;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
     min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
   }
+
+  /* Header */
   .header {
-    background: #1a1a1a;
-    border-bottom: 1px solid #2a2a2a;
-    padding: 20px 0;
-    text-align: center;
+    background: #ffffff;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
   }
-  .header h1 {
-    font-size: 1.8rem;
-    color: #ff6600;
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+  }
+  .logo-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--hn-orange);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
     font-weight: 700;
+    color: white;
+    flex-shrink: 0;
     letter-spacing: -0.5px;
   }
-  .header p {
-    color: #888;
-    margin-top: 6px;
-    font-size: 0.9rem;
+  .logo-text {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.3px;
   }
-  .container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 20px;
+  .logo-text span { color: var(--hn-orange); }
+  .header-link {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 6px;
+    transition: all 0.15s;
+    font-weight: 500;
   }
-  .search-box {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 12px;
-    padding: 28px;
-    margin: 32px auto;
+  .header-link:hover {
+    border-color: var(--hn-orange);
+    color: var(--hn-orange);
+    background: var(--hn-orange-light);
+  }
+
+  /* Hero */
+  .hero {
+    background: white;
+    padding: 52px 24px 44px;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--hn-orange-light);
+    color: var(--hn-orange-dark);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 100px;
+    margin-bottom: 20px;
+    letter-spacing: 0.2px;
+  }
+  .hero h1 {
+    font-size: clamp(1.75rem, 4vw, 2.5rem);
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.75px;
+    line-height: 1.2;
+    margin-bottom: 14px;
     max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
   }
-  .search-box label {
-    display: block;
-    font-size: 0.85rem;
-    color: #aaa;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  .hero h1 span { color: var(--hn-orange); }
+  .hero p {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    max-width: 520px;
+    margin: 0 auto 32px;
+    line-height: 1.6;
+  }
+
+  /* Search Form */
+  .search-card {
+    max-width: 740px;
+    margin: 0 auto;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-md);
   }
   .search-row {
     display: flex;
-    gap: 12px;
-    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
   }
-  .search-box input[type="text"] {
+  .search-input-wrap {
     flex: 1;
-    background: #0f0f0f;
-    border: 1px solid #333;
+    position: relative;
+    min-width: 200px;
+  }
+  .search-input-wrap .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 14px;
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1.5px solid var(--border);
     border-radius: 8px;
-    padding: 12px 16px;
-    color: #e8e8e8;
-    font-size: 1rem;
+    padding: 11px 14px 11px 40px;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: var(--text-primary);
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.15s, box-shadow 0.15s;
   }
-  .search-box input[type="text"]:focus {
-    border-color: #ff6600;
+  .search-input:focus {
+    border-color: var(--hn-orange);
+    box-shadow: 0 0 0 3px rgba(255,102,0,0.12);
+    background: white;
   }
-  .search-box input[type="text"]::placeholder {
-    color: #555;
+  .search-input::placeholder { color: var(--text-muted); }
+
+  .thread-select {
+    background: var(--bg);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    color: var(--text-secondary);
+    outline: none;
+    cursor: pointer;
+    min-width: 160px;
+    transition: border-color 0.15s;
+    max-width: 200px;
   }
-  .btn {
-    background: #ff6600;
+  .thread-select:focus {
+    border-color: var(--hn-orange);
+    box-shadow: 0 0 0 3px rgba(255,102,0,0.12);
+  }
+
+  .btn-search {
+    background: var(--hn-orange);
     color: white;
     border: none;
     border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.2s;
-    white-space: nowrap;
-  }
-  .btn:hover { background: #e55a00; }
-  .btn:disabled { background: #555; cursor: not-allowed; }
-  .btn-secondary {
-    background: #2a2a2a;
-    color: #e8e8e8;
-    border: 1px solid #444;
-  }
-  .btn-secondary:hover { background: #333; }
-  .hint {
-    font-size: 0.8rem;
-    color: #555;
-    margin-top: 10px;
-  }
-  #status {
-    text-align: center;
-    padding: 20px;
-    color: #888;
+    padding: 11px 22px;
     font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 7px;
   }
-  #status .spinner {
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    border: 2px solid #333;
-    border-top-color: #ff6600;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    vertical-align: middle;
-    margin-right: 8px;
+  .btn-search:hover { background: var(--hn-orange-dark); }
+  .btn-search:active { transform: scale(0.98); }
+  .btn-search:disabled { background: var(--text-muted); cursor: not-allowed; transform: none; }
+
+  .search-options {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
+  .toggle-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-wrap input[type=checkbox] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--hn-orange);
+    cursor: pointer;
+  }
+  .toggle-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .search-hint {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    margin-left: auto;
+  }
+
+  /* Main */
+  .main {
+    max-width: 1100px;
+    margin: 32px auto;
+    padding: 0 24px 60px;
+  }
+
+  /* Results header */
   .results-header {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-  }
-  .results-header h2 {
-    font-size: 1rem;
-    color: #888;
-    font-weight: 400;
-  }
-  .results-header h2 span {
-    color: #ff6600;
-    font-weight: 700;
-  }
-  .card {
-    background: #1a1a1a;
-    border: 1px solid #2a2a2a;
-    border-radius: 10px;
-    padding: 20px;
-    margin-bottom: 12px;
-    transition: border-color 0.2s;
-  }
-  .card:hover { border-color: #444; }
-  .card-top {
-    display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
     gap: 12px;
   }
-  .company-name {
-    font-size: 1.05rem;
+  .results-meta {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+  .results-meta strong { color: var(--text-primary); }
+  .btn-export {
+    background: white;
+    border: 1.5px solid var(--border);
+    color: var(--text-secondary);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: #f0f0f0;
-  }
-  .card-links {
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s;
     display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-  }
-  .badge {
-    font-size: 0.75rem;
-    padding: 3px 8px;
-    border-radius: 4px;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-  .badge-hn {
-    background: #ff660022;
-    color: #ff6600;
-    border: 1px solid #ff660044;
-  }
-  .badge-web {
-    background: #0077ff22;
-    color: #4da6ff;
-    border: 1px solid #0077ff44;
-  }
-  .description {
-    color: #999;
-    font-size: 0.88rem;
-    line-height: 1.5;
-    margin-bottom: 12px;
-  }
-  .emails {
-    display: flex;
-    flex-wrap: wrap;
+    align-items: center;
     gap: 6px;
   }
-  .email-chip {
-    background: #0f2a1a;
-    border: 1px solid #1a4a2a;
-    color: #4adb8a;
-    font-size: 0.8rem;
-    padding: 3px 10px;
-    border-radius: 20px;
+  .btn-export:hover {
+    border-color: var(--hn-orange);
+    color: var(--hn-orange);
+    background: var(--hn-orange-light);
+  }
+
+  /* Cards */
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.15s, border-color 0.15s, transform 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+  }
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .company-initial {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--hn-orange-light);
+    color: var(--hn-orange-dark);
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .company-info { flex: 1; min-width: 0; }
+  .company-name {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.2px;
+  }
+  .company-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 100px;
+    line-height: 1.5;
+  }
+  .badge-remote { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .badge-onsite { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+  .badge-hybrid { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .badge-salary { background: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+
+  .card-hn-link {
+    color: var(--text-muted);
     text-decoration: none;
+    font-size: 0.7rem;
+    font-weight: 600;
+    transition: color 0.15s;
+    flex-shrink: 0;
+    padding: 4px 8px;
+    border-radius: 5px;
+    background: var(--bg);
+    border: 1px solid var(--border);
   }
-  .email-chip:hover { background: #1a3a2a; }
-  .no-email {
-    font-size: 0.8rem;
-    color: #555;
-    font-style: italic;
+  .card-hn-link:hover { color: var(--hn-orange); border-color: var(--hn-orange); background: var(--hn-orange-light); }
+
+  .card-desc {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
+
+  .tech-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+  }
+  .tech-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: #f3f4f6;
+    color: #374151;
+    border: 1px solid #e5e7eb;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
+    margin-top: auto;
+  }
+  .card-email {
+    font-size: 0.73rem;
+    color: var(--hn-orange);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+    cursor: pointer;
+    padding: 4px 9px;
+    border-radius: 5px;
+    background: var(--hn-orange-light);
+    transition: background 0.15s;
+    border: none;
+    font-family: inherit;
+  }
+  .card-email:hover { background: #fde5cc; }
+  .card-website {
+    font-size: 0.73rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 150px;
+    transition: color 0.15s;
+  }
+  .card-website:hover { color: var(--hn-orange); }
+
+  /* Loading */
+  .loading-state { display: none; text-align: center; padding: 48px 20px; }
+  .loading-state.active { display: block; }
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--hn-orange);
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; }
+  .loading-sub { color: var(--text-muted); font-size: 0.8rem; margin-top: 6px; }
+
+  /* Skeletons */
+  .skeleton-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .skeleton-card { background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+  .skeleton-line {
+    height: 12px; border-radius: 6px;
+    background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s ease-in-out infinite;
+    margin-bottom: 10px;
+  }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* Empty / error */
+  .empty-state { display: none; text-align: center; padding: 60px 20px; }
+  .empty-state.active { display: block; }
+  .empty-icon { font-size: 2.5rem; margin-bottom: 14px; }
+  .empty-title { font-size: 1.05rem; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+  .empty-sub { font-size: 0.875rem; color: var(--text-secondary); max-width: 400px; margin: 0 auto; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #111827; color: white;
+    padding: 10px 18px; border-radius: 8px;
+    font-size: 0.85rem; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    opacity: 0; transform: translateY(8px);
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none; z-index: 1000;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* Footer */
   .footer {
-    text-align: center;
-    padding: 40px 20px;
-    color: #444;
-    font-size: 0.8rem;
-    border-top: 1px solid #1a1a1a;
-    margin-top: 40px;
+    background: white; border-top: 1px solid var(--border);
+    padding: 24px; text-align: center;
   }
-  .footer a { color: #666; }
-  #results-section { display: none; }
-  .error-msg {
-    background: #2a0f0f;
-    border: 1px solid #4a1a1a;
-    color: #ff6b6b;
-    padding: 16px;
-    border-radius: 8px;
-    margin: 20px 0;
+  .footer p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.7; }
+  .footer a { color: var(--hn-orange); text-decoration: none; font-weight: 500; }
+  .footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 600px) {
+    .hero { padding: 36px 20px 28px; }
+    .search-row { flex-direction: column; }
+    .thread-select, .btn-search { width: 100%; max-width: 100%; justify-content: center; }
+    .cards-grid, .skeleton-grid { grid-template-columns: 1fr; }
+    .results-header { flex-direction: column; align-items: flex-start; }
   }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div class="container">
-    <h1>HN Startup Hunter</h1>
-    <p>Find companies hiring on Hacker News "Who is Hiring" threads — instantly</p>
+<header class="header">
+  <div class="header-inner">
+    <a href="/" class="logo">
+      <div class="logo-icon">HN</div>
+      <span class="logo-text">Startup<span>Hunter</span></span>
+    </a>
+    <a href="https://lukassbrad.gumroad.com/l/ggyscy" target="_blank" class="header-link">
+      Self-host €7 →
+    </a>
   </div>
-</div>
+</header>
 
-<div class="container">
-  <div class="search-box">
-    <label>Your Skills / Keywords</label>
+<section class="hero">
+  <div class="hero-badge">&#128994; Live from Hacker News</div>
+  <h1>Find startups hiring<br><span>right now on HN</span></h1>
+  <p>Search every &#8220;Who is Hiring?&#8221; post by skills, stack, or role. Direct contacts &mdash; no recruiter middlemen.</p>
+
+  <div class="search-card">
     <div class="search-row">
-      <input type="text" id="skills" placeholder="python, data engineering, remote..." value="">
-      <button class="btn" id="searchBtn" onclick="runSearch()">Search HN</button>
+      <div class="search-input-wrap">
+        <span class="search-icon">&#128269;</span>
+        <input
+          type="text"
+          id="skillsInput"
+          class="search-input"
+          placeholder="python, remote, data engineering"
+          autocomplete="off"
+          autofocus
+        />
+      </div>
+      <select id="threadSelect" class="thread-select">
+        {% for t in threads %}
+        <option value="{{ t.id }}">{{ t.title | replace('Ask HN: ', '') | truncate(30, true) }}</option>
+        {% endfor %}
+      </select>
+      <button id="searchBtn" class="btn-search" onclick="runSearch()">
+        Search &#8594;
+      </button>
     </div>
-    <p class="hint">Leave blank to see all companies. Separate skills with commas. Searches live HN data.</p>
+    <div class="search-options">
+      <label class="toggle-wrap">
+        <input type="checkbox" id="remoteOnly">
+        <span class="toggle-label">Remote only</span>
+      </label>
+      <span class="search-hint">Enter to search &middot; blank = all companies</span>
+    </div>
+  </div>
+</section>
+
+<main class="main">
+  <div class="loading-state" id="loadingState">
+    <div class="skeleton-grid" id="skeletonGrid"></div>
+    <div class="spinner"></div>
+    <p class="loading-text">Scanning HN hiring thread&hellip;</p>
+    <p class="loading-sub" id="loadingProgress">Fetching comments from Hacker News API</p>
   </div>
 
-  <div id="status"></div>
-  <div id="error-area"></div>
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">&#128301;</div>
+    <p class="empty-title">No matches found</p>
+    <p class="empty-sub">Try broader keywords like &#8220;python&#8221; or &#8220;remote&#8221; &mdash; or leave blank to see all companies hiring.</p>
+  </div>
 
-  <div id="results-section">
+  <div class="empty-state" id="errorState">
+    <div class="empty-icon">&#9888;&#65039;</div>
+    <p class="empty-title">Something went wrong</p>
+    <p class="empty-sub" id="errorMsg">Please try again in a moment.</p>
+  </div>
+
+  <div id="resultsWrap" style="display:none">
     <div class="results-header">
-      <h2>Found <span id="count">0</span> companies matching your skills</h2>
-      <button class="btn btn-secondary" id="exportBtn" onclick="exportCSV()">Export CSV</button>
+      <p class="results-meta" id="resultsMeta"></p>
+      <button class="btn-export" onclick="exportCSV()">&#11015; Export CSV</button>
     </div>
-    <div id="results-list"></div>
+    <div class="cards-grid" id="cardsGrid"></div>
   </div>
-</div>
+</main>
 
-<div class="footer">
-  <p>Data sourced from <a href="https://news.ycombinator.com" target="_blank">Hacker News</a> via the public API &mdash; refreshed on every search &mdash; <a href="https://lukassbrad.gumroad.com/l/ggyscy" target="_blank">Get the self-hosted version</a></p>
-</div>
+<footer class="footer">
+  <p>
+    Data live from <a href="https://news.ycombinator.com" target="_blank">Hacker News</a> via Firebase API &middot;
+    Want to run this on your own server?
+    <a href="https://lukassbrad.gumroad.com/l/ggyscy" target="_blank">Get the self-hosted version on Gumroad (&#8364;7)</a>
+  </p>
+</footer>
+
+<div class="toast" id="toast"></div>
 
 <script>
 let currentResults = [];
 
-async function runSearch() {
-  const skills = document.getElementById('skills').value;
-  const btn = document.getElementById('searchBtn');
-  const status = document.getElementById('status');
-  const errorArea = document.getElementById('error-area');
+document.getElementById('skillsInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') runSearch();
+});
 
-  btn.disabled = true;
-  errorArea.innerHTML = '';
-  document.getElementById('results-section').style.display = 'none';
-  status.innerHTML = '<span class="spinner"></span> Fetching live data from Hacker News... (10-30 seconds)';
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2500);
+}
 
-  try {
-    const formData = new FormData();
-    formData.append('skills', skills);
+function renderSkeletons() {
+  var grid = document.getElementById('skeletonGrid');
+  var html = '';
+  for (var i = 0; i < 6; i++) {
+    html += '<div class="skeleton-card">' +
+      '<div style="display:flex;gap:12px;margin-bottom:12px">' +
+        '<div style="width:40px;height:40px;border-radius:10px;background:#f3f4f6;flex-shrink:0"></div>' +
+        '<div style="flex:1">' +
+          '<div class="skeleton-line" style="width:55%;height:14px"></div>' +
+          '<div class="skeleton-line" style="width:30%;height:10px;margin-top:6px"></div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="skeleton-line" style="width:100%"></div>' +
+      '<div class="skeleton-line" style="width:88%"></div>' +
+      '<div class="skeleton-line" style="width:72%"></div>' +
+      '<div style="display:flex;gap:6px;margin-top:8px">' +
+        '<div class="skeleton-line" style="width:48px;height:20px;border-radius:5px;margin:0"></div>' +
+        '<div class="skeleton-line" style="width:52px;height:20px;border-radius:5px;margin:0"></div>' +
+        '<div class="skeleton-line" style="width:40px;height:20px;border-radius:5px;margin:0"></div>' +
+      '</div>' +
+    '</div>';
+  }
+  grid.innerHTML = html;
+}
 
-    const resp = await fetch('/search', { method: 'POST', body: formData });
-    const data = await resp.json();
+function getLocationBadge(loc) {
+  if (!loc) return '';
+  var lower = loc.toLowerCase();
+  if (lower.indexOf('remote') !== -1 && (lower.indexOf('onsite') !== -1 || lower.indexOf('on-site') !== -1)) {
+    return '<span class="badge badge-hybrid">' + loc + '</span>';
+  } else if (lower.indexOf('remote') !== -1) {
+    return '<span class="badge badge-remote">Remote</span>';
+  }
+  return '<span class="badge badge-onsite">' + escHtml(loc) + '</span>';
+}
 
-    if (!data.success) {
-      throw new Error(data.error || 'Search failed');
-    }
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
 
-    currentResults = data.results;
-    status.innerHTML = '';
-    renderResults(data.results, data.count);
+function renderCard(r) {
+  var initial = (r.company || '?')[0].toUpperCase();
+  var techHtml = '';
+  if (r.tech_tags && r.tech_tags.length) {
+    techHtml = '<div class="tech-tags">' + r.tech_tags.map(function(t) {
+      return '<span class="tech-tag">' + escHtml(t) + '</span>';
+    }).join('') + '</div>';
+  }
 
-  } catch (err) {
-    status.innerHTML = '';
-    errorArea.innerHTML = `<div class="error-msg">Error: ${err.message}</div>`;
-  } finally {
-    btn.disabled = false;
+  var emailHtml = r.emails && r.emails.length
+    ? '<button class="card-email" onclick="copyEmail(\'' + escHtml(r.emails[0]) + '\')" title="Click to copy">✉️ ' + escHtml(r.emails[0]) + '</button>'
+    : '<span style="font-size:0.73rem;color:var(--text-muted)">No email found</span>';
+
+  var urlHtml = '';
+  if (r.url) {
+    var domain = r.url.replace(/https?:\/\//, '').replace(/\/.*/, '');
+    urlHtml = '<a href="' + escHtml(r.url) + '" target="_blank" class="card-website" title="' + escHtml(r.url) + '">' + escHtml(domain) + '</a>';
+  }
+
+  var salaryHtml = r.salary ? '<span class="badge badge-salary">' + escHtml(r.salary) + '</span>' : '';
+
+  return '<div class="card">' +
+    '<div class="card-header">' +
+      '<div class="company-initial">' + escHtml(initial) + '</div>' +
+      '<div class="company-info">' +
+        '<div class="company-name" title="' + escHtml(r.company) + '">' + escHtml(r.company) + '</div>' +
+        '<div class="company-meta">' + getLocationBadge(r.location) + salaryHtml + '</div>' +
+      '</div>' +
+      '<a href="' + escHtml(r.hn_link) + '" target="_blank" class="card-hn-link">HN &nearr;</a>' +
+    '</div>' +
+    (r.description ? '<p class="card-desc">' + escHtml(r.description) + '</p>' : '') +
+    techHtml +
+    '<div class="card-footer">' + emailHtml + urlHtml + '</div>' +
+  '</div>';
+}
+
+function copyEmail(email) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(email).then(function() {
+      showToast('Copied: ' + email);
+    });
+  } else {
+    showToast(email);
   }
 }
 
-function renderResults(results, count) {
-  document.getElementById('count').textContent = count;
-  document.getElementById('results-section').style.display = 'block';
+async function runSearch() {
+  var skills = document.getElementById('skillsInput').value.trim();
+  var threadId = document.getElementById('threadSelect').value;
+  var remoteOnly = document.getElementById('remoteOnly').checked;
+  var btn = document.getElementById('searchBtn');
 
-  const list = document.getElementById('results-list');
-  if (results.length === 0) {
-    list.innerHTML = '<div class="card" style="text-align:center;color:#666">No matches found. Try broader keywords or leave blank to see all companies.</div>';
-    return;
+  btn.disabled = true;
+  btn.textContent = 'Searching…';
+  document.getElementById('resultsWrap').style.display = 'none';
+  document.getElementById('emptyState').classList.remove('active');
+  document.getElementById('errorState').classList.remove('active');
+  document.getElementById('loadingState').classList.add('active');
+  renderSkeletons();
+
+  var msgs = [
+    'Fetching comments from Hacker News API…',
+    'Scanning job posts for skill matches…',
+    'Extracting companies, emails, tech stacks…',
+    'Filtering and ranking results…',
+  ];
+  var mi = 0;
+  var interval = setInterval(function() {
+    document.getElementById('loadingProgress').textContent = msgs[Math.min(mi++, msgs.length - 1)];
+  }, 1800);
+
+  try {
+    var form = new FormData();
+    form.append('skills', skills);
+    form.append('thread_id', threadId);
+    form.append('remote_only', remoteOnly ? 'true' : 'false');
+
+    var resp = await fetch('/search', { method: 'POST', body: form });
+    var data = await resp.json();
+
+    clearInterval(interval);
+    document.getElementById('loadingState').classList.remove('active');
+
+    if (!data.success) throw new Error(data.error || 'Unknown error');
+
+    currentResults = data.results;
+
+    if (data.results.length === 0) {
+      document.getElementById('emptyState').classList.add('active');
+    } else {
+      document.getElementById('resultsMeta').innerHTML =
+        'Found <strong>' + data.count + '</strong> matching companies from <strong>' + data.total_scanned + '</strong> posts scanned';
+      document.getElementById('cardsGrid').innerHTML = data.results.map(renderCard).join('');
+      document.getElementById('resultsWrap').style.display = 'block';
+    }
+  } catch (err) {
+    clearInterval(interval);
+    document.getElementById('loadingState').classList.remove('active');
+    document.getElementById('errorState').classList.add('active');
+    document.getElementById('errorMsg').textContent = err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Search →';
   }
-
-  list.innerHTML = results.map(r => `
-    <div class="card">
-      <div class="card-top">
-        <div class="company-name">${escapeHtml(r.company)}</div>
-        <div class="card-links">
-          ${r.url ? `<a class="badge badge-web" href="${escapeHtml(r.url)}" target="_blank">Website</a>` : ''}
-          <a class="badge badge-hn" href="${escapeHtml(r.hn_link)}" target="_blank">HN Post</a>
-        </div>
-      </div>
-      <div class="description">${escapeHtml(r.description)}</div>
-      <div class="emails">
-        ${r.emails && r.emails.length > 0
-          ? r.emails.map(e => `<a class="email-chip" href="mailto:${escapeHtml(e)}">${escapeHtml(e)}</a>`).join('')
-          : '<span class="no-email">No direct email — see HN post for contact info</span>'
-        }
-      </div>
-    </div>
-  `).join('');
 }
 
 async function exportCSV() {
-  if (!currentResults.length) return;
-
-  const resp = await fetch('/export', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ results: currentResults })
-  });
-
-  const blob = await resp.blob();
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'hn-leads.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+  if (!currentResults.length) { showToast('Search first to get results'); return; }
+  try {
+    var resp = await fetch('/export', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ results: currentResults })
+    });
+    var blob = await resp.blob();
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'hn-startup-leads.csv';
+    a.click();
+    showToast('Exported ' + currentResults.length + ' leads to CSV');
+  } catch (e) {
+    showToast('Export failed — please try again');
+  }
 }
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-// Allow Enter key to trigger search
-document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('skills').addEventListener('keydown', e => {
-    if (e.key === 'Enter') runSearch();
-  });
-});
 </script>
 </body>
 </html>
