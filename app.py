@@ -282,5 +282,104 @@ def activate():
         return jsonify({"status": "not_found", "message": "Email not found. Please check your purchase email or contact support."}), 404
     return render_template("activate.html")
 
+
+# ============================================================
+# B2B API ($49/month) — programmatic access for recruiting tools
+# ============================================================
+
+API_KEYS_FILE = '/tmp/api_keys.json'
+
+def get_api_keys():
+    try:
+        with open(API_KEYS_FILE) as f:
+            return json.load(f)
+    except:
+        return {}
+
+def save_api_key(api_key, email, order_id):
+    keys = get_api_keys()
+    keys[api_key] = {'email': email, 'order_id': order_id, 'active': True}
+    try:
+        with open(API_KEYS_FILE, 'w') as f:
+            json.dump(keys, f)
+    except:
+        pass
+
+def is_valid_api_key(api_key):
+    if not api_key:
+        return False
+    keys = get_api_keys()
+    return api_key in keys and keys[api_key].get('active', False)
+
+@app.route("/api/v1/search", methods=["GET"])
+def api_search():
+    """B2B API endpoint — $49/month plan."""
+    api_key = request.args.get('api_key', '')
+    if not is_valid_api_key(api_key):
+        return jsonify({
+            "error": "Invalid or missing API key. Subscribe at /api/docs",
+            "docs": "https://hn-startup-hunter.onrender.com/api/docs"
+        }), 401
+    skills = request.args.get('skills', '').strip()
+    thread_id = request.args.get('thread_id', '').strip()
+    remote_only = request.args.get('remote_only', '').lower() == 'true'
+    limit = min(int(request.args.get('limit', 200)), 500)
+    if not thread_id:
+        threads = get_hiring_threads(1)
+        thread_id = threads[0]["id"] if threads else "47975571"
+    try:
+        results, total_comments = scrape_hn_jobs(skills, thread_id, remote_only=remote_only)
+        return jsonify({
+            "success": True, "count": min(len(results), limit),
+            "total_scanned": total_comments, "results": results[:limit],
+            "thread_id": thread_id, "skills_filter": skills,
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/api/v1/threads", methods=["GET"])
+def api_threads():
+    api_key = request.args.get('api_key', '')
+    if not is_valid_api_key(api_key):
+        return jsonify({"error": "Invalid API key"}), 401
+    threads = get_hiring_threads(6)
+    return jsonify({"threads": threads})
+
+@app.route("/api/docs")
+def api_docs():
+    from flask import Response
+    html = """<!DOCTYPE html><html><head><title>HN Startup Hunter API</title>
+<style>body{font-family:monospace;max-width:800px;margin:40px auto;padding:20px;background:#1a1a2e;color:#eee}
+h1,h2{color:#ff6600}pre{background:#0d0d1a;padding:12px;border-radius:6px;overflow-x:auto}
+.cta{background:#ff6600;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;margin:10px 0}
+</style></head><body>
+<h1>HN Startup Hunter API</h1>
+<p>Programmatic access to HN "Who is Hiring?" data. Perfect for recruiting tools and ATS integrations.</p>
+<a class="cta" href="https://bradauto.lemonsqueezy.com/checkout/buy/96ddcb80-0ed2-48af-a4e5-3fe87df49166">Get API Access — $49/mo &rarr;</a>
+<h2>Search Endpoint</h2>
+<pre>GET /api/v1/search?api_key=YOUR_KEY&skills=python,fastapi&remote_only=true&limit=100</pre>
+<p><b>Parameters:</b></p>
+<ul>
+<li><code>api_key</code> — required</li>
+<li><code>skills</code> — comma-separated tech skills filter</li>
+<li><code>thread_id</code> — specific HN thread ID (see /api/v1/threads)</li>
+<li><code>remote_only</code> — true/false</li>
+<li><code>limit</code> — max results (default 200, max 500)</li>
+</ul>
+<h2>Threads Endpoint</h2>
+<pre>GET /api/v1/threads?api_key=YOUR_KEY</pre>
+<h2>Response Schema</h2>
+<pre>{"success": true, "count": 42, "results": [
+  {"company": "Acme Corp", "emails": ["jobs@acme.com"],
+   "tech_tags": ["Python", "FastAPI"], "location": "Remote",
+   "salary": "$120k-$160k", "url": "https://acme.com",
+   "hn_link": "https://news.ycombinator.com/item?id=..."}
+]}</pre>
+<h2>Pricing</h2>
+<p>$49/month. API key delivered within 24h of payment. Cancel anytime.</p>
+<a class="cta" href="https://bradauto.lemonsqueezy.com/checkout/buy/96ddcb80-0ed2-48af-a4e5-3fe87df49166">Subscribe Now &rarr;</a>
+</body></html>"""
+    return Response(html, content_type='text/html')
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
