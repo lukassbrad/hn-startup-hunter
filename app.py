@@ -228,7 +228,7 @@ def search():
             "success": True, "count": len(results), "total_scanned": total_comments,
             "results": results, "locked": locked, "total_available": free_count,
             "is_pro": pro,
-            "upgrade_url": "https://bradauto.lemonsqueezy.com/checkout/buy/96ddcb80-0ed2-48af-a4e5-3fe87df49166"
+            "upgrade_url": "https://hn-startup-hunter.onrender.com/waitlist"
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
@@ -236,7 +236,7 @@ def search():
 @app.route("/export", methods=["POST"])
 def export():
     if not is_pro(request):
-        return jsonify({"error": "Pro required for export", "upgrade_url": "https://bradauto.lemonsqueezy.com/checkout/buy/96ddcb80-0ed2-48af-a4e5-3fe87df49166"}), 403
+        return jsonify({"error": "Pro required for export", "upgrade_url": "https://hn-startup-hunter.onrender.com/waitlist"}), 403
     data = request.get_json()
     results = data.get("results", [])
     output = io.StringIO()
@@ -311,6 +311,48 @@ def is_valid_api_key(api_key):
     keys = get_api_keys()
     return api_key in keys and keys[api_key].get('active', False)
 
+
+
+@app.route("/waitlist", methods=["GET", "POST"])
+def waitlist():
+    """Email waitlist for Pro tier - captures leads until checkout is live"""
+    if request.method == "POST":
+        email = request.form.get("email", "").strip().lower()
+        if email and "@" in email:
+            # Save to waitlist file
+            waitlist_file = "/tmp/pro_waitlist.json"
+            try:
+                with open(waitlist_file) as f:
+                    waitlist = json.load(f)
+            except:
+                waitlist = []
+            if email not in waitlist:
+                waitlist.append(email)
+                with open(waitlist_file, 'w') as f:
+                    json.dump(waitlist, f)
+            return jsonify({"success": True, "message": "You're on the list! We'll email you when Pro launches with your 50% discount."})
+        return jsonify({"success": False, "message": "Please enter a valid email."}), 400
+    # GET: show waitlist form
+    return """<!DOCTYPE html><html><head><title>HN Startup Hunter Pro — Early Access</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{font-family:sans-serif;max-width:480px;margin:80px auto;padding:20px;text-align:center}
+h1{font-size:1.8em;margin-bottom:8px}p{color:#555;margin:8px 0}
+input{width:100%;padding:12px;font-size:1em;border:2px solid #ddd;border-radius:6px;box-sizing:border-box;margin:12px 0}
+button{background:#ff6154;color:white;border:none;padding:14px 28px;font-size:1em;border-radius:6px;cursor:pointer;width:100%}
+button:hover{background:#e55a4d}.badge{background:#fff3cd;border:1px solid #ffecb5;padding:6px 12px;border-radius:20px;font-size:0.85em;display:inline-block;margin-bottom:16px}</style></head>
+<body><div class="badge">⚡ Limited Early Access</div>
+<h1>HN Startup Hunter Pro</h1>
+<p>Unlimited search results + CSV export with direct emails.<br>Normally $9/month — <strong>first 50 users get 50% off for life.</strong></p>
+<form id="f" onsubmit="sub(event)">
+<input type="email" id="e" placeholder="your@email.com" required>
+<button type="submit">Get 50% Off — Join Waitlist</button>
+</form>
+<p style="font-size:0.8em;color:#888;margin-top:12px">No spam. Unsubscribe anytime. We'll email when Pro launches.</p>
+<script>function sub(e){e.preventDefault();const em=document.getElementById('e').value;
+fetch('/waitlist',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'email='+encodeURIComponent(em)})
+.then(r=>r.json()).then(d=>{if(d.success){document.getElementById('f').innerHTML='<p style="color:green;font-size:1.2em">✓ You\'re on the list! Check your email when we launch.</p>'}else{alert(d.message)}})
+.catch(()=>alert('Error. Try again.'))}</script></body></html>"""
+
 @app.route("/api/v1/search", methods=["GET"])
 def api_search():
     """B2B API endpoint — $49/month plan."""
@@ -355,7 +397,7 @@ h1,h2{color:#ff6600}pre{background:#0d0d1a;padding:12px;border-radius:6px;overfl
 </style></head><body>
 <h1>HN Startup Hunter API</h1>
 <p>Programmatic access to HN "Who is Hiring?" data. Perfect for recruiting tools and ATS integrations.</p>
-<a class="cta" href="https://bradauto.lemonsqueezy.com/checkout/buy/96ddcb80-0ed2-48af-a4e5-3fe87df49166">Get API Access — $49/mo &rarr;</a>
+<a class="cta" href="https://hn-startup-hunter.onrender.com/waitlist">Get API Access — $49/mo &rarr;</a>
 <h2>Search Endpoint</h2>
 <pre>GET /api/v1/search?api_key=YOUR_KEY&skills=python,fastapi&remote_only=true&limit=100</pre>
 <p><b>Parameters:</b></p>
@@ -377,7 +419,7 @@ h1,h2{color:#ff6600}pre{background:#0d0d1a;padding:12px;border-radius:6px;overfl
 ]}</pre>
 <h2>Pricing</h2>
 <p>$49/month. API key delivered within 24h of payment. Cancel anytime.</p>
-<a class="cta" href="https://bradauto.lemonsqueezy.com/checkout/buy/96ddcb80-0ed2-48af-a4e5-3fe87df49166">Subscribe Now &rarr;</a>
+<a class="cta" href="https://hn-startup-hunter.onrender.com/waitlist">Subscribe Now &rarr;</a>
 </body></html>"""
     return Response(html, content_type='text/html')
 
