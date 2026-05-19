@@ -313,6 +313,21 @@ def is_valid_api_key(api_key):
 
 
 
+
+@app.route("/waitlist/count", methods=["GET"])
+def waitlist_count():
+    """Return count of waitlist signups (for monitoring)"""
+    import os
+    waitlist_file = "/tmp/pro_waitlist.json"
+    try:
+        if os.path.exists(waitlist_file):
+            with open(waitlist_file) as f:
+                waitlist = json.load(f)
+            return jsonify({"count": len(waitlist)})
+        return jsonify({"count": 0})
+    except:
+        return jsonify({"count": 0})
+
 @app.route("/waitlist", methods=["GET", "POST"])
 def waitlist():
     """Email waitlist for Pro tier - captures leads until checkout is live"""
