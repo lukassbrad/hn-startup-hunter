@@ -669,6 +669,14 @@
       <button class="btn-export" onclick="exportCSV()">&#11015; Export CSV</button>
     </div>
     <div class="cards-grid" id="cardsGrid"></div>
+    <div id="resultsCTA" style="display:none; margin-top:2rem; text-align:center; padding-bottom:1rem;">
+      <p style="padding: 1rem 1.5rem; background: #fff8f0; border: 2px solid #ff6600; border-radius: 10px; display:inline-block; max-width:560px; text-align:left;">
+        &#127919; <strong>Want a custom outreach list from these results?</strong><br>
+        <span style="font-size:0.9rem;">Tell me your stack &amp; role &mdash; I deliver 20&ndash;50 matching companies with verified emails &amp; tech stacks in 24h.<br>
+        <em style="font-size:0.82rem;color:#888;">First order? Request a free 5-company sample to verify quality.</em></span><br>
+        <a href="https://lukassbrad.gumroad.com/l/rjtaos" target="_blank" style="display:inline-block;margin-top:0.6rem;padding:9px 22px;background:#ff6600;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.95rem;">Order custom HN lead report &mdash; $75 &rarr;</a>
+      </p>
+    </div>
   </div>
 </main>
 
@@ -883,6 +891,7 @@ async function runSearch() {
         document.getElementById('cardsGrid').innerHTML = paywallHtml + overlay;
       }
       document.getElementById('resultsWrap').style.display = 'block';
+      document.getElementById('resultsCTA').style.display = 'block';
     }
   } catch (err) {
     clearInterval(interval);
