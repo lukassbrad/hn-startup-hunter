@@ -18,6 +18,9 @@ FREE_LIMIT = 20  # Free tier: first 20 results
 LS_WEBHOOK_SECRET = os.environ.get('LS_WEBHOOK_SECRET', '')
 ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'hn-admin-2026-secret')
 PRO_EMAILS_FILE = '/tmp/pro_emails.json'
+GITHUB_PAT_BACKUP = os.environ.get('GITHUB_PAT', '')
+WAITLIST_GITHUB_REPO = 'lukassbrad/hn-startup-hunter'
+WAITLIST_GITHUB_FILE = 'waitlist_data.json'
 
 def get_pro_emails():
     """Load pro emails from file + PRO_EMAILS env var (persistent fallback)."""
@@ -351,15 +354,71 @@ def is_valid_api_key(api_key):
 
 
 
+def load_waitlist_from_github():
+    """Load waitlist from GitHub as persistent backup."""
+    if not GITHUB_PAT_BACKUP:
+        return []
+    try:
+        import base64
+        url = f'https://api.github.com/repos/{WAITLIST_GITHUB_REPO}/contents/{WAITLIST_GITHUB_FILE}'
+        req = urllib.request.Request(url, headers={
+            'Authorization': f'token {GITHUB_PAT_BACKUP}',
+            'Accept': 'application/vnd.github.v3+json'
+        })
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read())
+            raw = base64.b64decode(data['content'].replace('\n', '')).decode()
+            return json.loads(raw)
+    except:
+        return []
+
+def save_waitlist_to_github(waitlist):
+    """Save waitlist to GitHub as persistent backup."""
+    if not GITHUB_PAT_BACKUP:
+        return
+    try:
+        import base64
+        url = f'https://api.github.com/repos/{WAITLIST_GITHUB_REPO}/contents/{WAITLIST_GITHUB_FILE}'
+        sha = None
+        try:
+            req = urllib.request.Request(url, headers={
+                'Authorization': f'token {GITHUB_PAT_BACKUP}',
+                'Accept': 'application/vnd.github.v3+json'
+            })
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                existing = json.loads(resp.read())
+                sha = existing.get('sha')
+        except:
+            pass
+        raw = json.dumps(waitlist)
+        body = {'message': f'Update waitlist ({len(waitlist)} entries)', 'content': base64.b64encode(raw.encode()).decode()}
+        if sha:
+            body['sha'] = sha
+        data = json.dumps(body).encode()
+        req = urllib.request.Request(url, data=data, method='PUT', headers={
+            'Authorization': f'token {GITHUB_PAT_BACKUP}',
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+        })
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            pass
+    except:
+        pass
+
 @app.route("/waitlist/count", methods=["GET"])
 def waitlist_count():
     """Return count of waitlist signups (for monitoring)"""
-    import os
     waitlist_file = "/tmp/pro_waitlist.json"
     try:
         if os.path.exists(waitlist_file):
             with open(waitlist_file) as f:
                 waitlist = json.load(f)
+            return jsonify({"count": len(waitlist)})
+        # Try GitHub backup
+        waitlist = load_waitlist_from_github()
+        if waitlist:
+            with open(waitlist_file, 'w') as f:
+                json.dump(waitlist, f)
             return jsonify({"count": len(waitlist)})
         return jsonify({"count": 0})
     except:
@@ -377,11 +436,17 @@ def waitlist():
                 with open(waitlist_file) as f:
                     waitlist = json.load(f)
             except:
-                waitlist = []
+                # Try to restore from GitHub backup first
+                waitlist = load_waitlist_from_github()
             if email not in waitlist:
                 waitlist.append(email)
-                with open(waitlist_file, 'w') as f:
-                    json.dump(waitlist, f)
+                try:
+                    with open(waitlist_file, 'w') as f:
+                        json.dump(waitlist, f)
+                except:
+                    pass
+                # Backup to GitHub for persistence across restarts
+                save_waitlist_to_github(waitlist)
             return jsonify({"success": True, "message": "You're on the list! We'll email you when Pro launches with your 50% discount."})
         return jsonify({"success": False, "message": "Please enter a valid email."}), 400
     # GET: show waitlist form
