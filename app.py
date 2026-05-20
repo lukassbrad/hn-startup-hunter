@@ -16,14 +16,25 @@ app.secret_key = os.environ.get('SECRET_KEY', 'hn-hunter-secret-2026')
 
 FREE_LIMIT = 20  # Free tier: first 20 results
 LS_WEBHOOK_SECRET = os.environ.get('LS_WEBHOOK_SECRET', '')
+ADMIN_SECRET = os.environ.get('ADMIN_SECRET', 'hn-admin-2026-secret')
 PRO_EMAILS_FILE = '/tmp/pro_emails.json'
 
 def get_pro_emails():
+    """Load pro emails from file + PRO_EMAILS env var (persistent fallback)."""
+    emails = {}
+    # Load from file
     try:
         with open(PRO_EMAILS_FILE) as f:
-            return json.load(f)
+            emails = json.load(f)
     except:
-        return {}
+        pass
+    # Also load from env var (comma-separated, survives redeploy)
+    env_emails = os.environ.get('PRO_EMAILS', '')
+    for e in env_emails.split(','):
+        e = e.strip().lower()
+        if e and '@' in e:
+            emails[e] = {'order_id': 'env', 'active': True}
+    return emails
 
 def save_pro_email(email, order_id):
     emails = get_pro_emails()
@@ -268,6 +279,32 @@ def lemonsqueezy_webhook():
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
 
+@app.route("/webhook/gumroad", methods=["POST"])
+def gumroad_webhook():
+    """Receive Gumroad sale ping webhooks."""
+    try:
+        data = request.form
+        email = data.get("email", "").lower().strip()
+        sale_id = data.get("sale_id", "") or data.get("permalink", "")
+        if email and "@" in email:
+            save_pro_email(email, sale_id)
+            return "OK", 200
+        return "ignored", 200
+    except Exception as e:
+        return str(e), 400
+
+@app.route("/admin/add-pro", methods=["POST"])
+def admin_add_pro():
+    """Admin endpoint to manually add a Pro email."""
+    secret = request.args.get("secret") or request.form.get("secret")
+    if secret != ADMIN_SECRET:
+        return jsonify({"status": "unauthorized"}), 401
+    email = (request.args.get("email") or request.form.get("email", "")).lower().strip()
+    if not email or "@" not in email:
+        return jsonify({"status": "bad_email"}), 400
+    save_pro_email(email, "manual")
+    return jsonify({"status": "ok", "email": email}), 200
+
 @app.route("/activate", methods=["GET", "POST"])
 def activate():
     """Activate Pro access with purchase email."""
@@ -440,3 +477,4 @@ h1,h2{color:#ff6600}pre{background:#0d0d1a;padding:12px;border-radius:6px;overfl
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
+
