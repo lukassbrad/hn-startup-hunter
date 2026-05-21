@@ -432,6 +432,10 @@ def waitlist():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         if email and "@" in email:
+            # Also capture the search query they were running
+            query = request.form.get("query", "").strip()
+            import datetime
+            entry = {"email": email, "query": query, "ts": datetime.datetime.utcnow().isoformat()}
             # Save to waitlist file
             waitlist_file = "/tmp/pro_waitlist.json"
             try:
@@ -440,8 +444,15 @@ def waitlist():
             except:
                 # Try to restore from GitHub backup first
                 waitlist = load_waitlist_from_github()
-            if email not in waitlist:
-                waitlist.append(email)
+            # Check if email already exists (handle both string and dict formats)
+            existing_emails = set()
+            for item in waitlist:
+                if isinstance(item, dict):
+                    existing_emails.add(item.get("email", ""))
+                else:
+                    existing_emails.add(item)
+            if email not in existing_emails:
+                waitlist.append(entry)
                 try:
                     with open(waitlist_file, 'w') as f:
                         json.dump(waitlist, f)
@@ -449,7 +460,7 @@ def waitlist():
                     pass
                 # Backup to GitHub for persistence across restarts
                 save_waitlist_to_github(waitlist)
-            return jsonify({"success": True, "message": "You're on the list! We'll email you when Pro launches with your 50% discount."})
+            return jsonify({"success": True, "message": "Sending 5 matching companies with recruiter emails within 24h. Check your inbox!"})
         return jsonify({"success": False, "message": "Please enter a valid email."}), 400
     # GET: show waitlist form
     return """<!DOCTYPE html><html><head><title>HN Startup Hunter Pro — Early Access</title>
