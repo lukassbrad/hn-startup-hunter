@@ -461,7 +461,7 @@ button{background:#ff6154;color:white;border:none;padding:14px 28px;font-size:1e
 button:hover{background:#e55a4d}.badge{background:#fff3cd;border:1px solid #ffecb5;padding:6px 12px;border-radius:20px;font-size:0.85em;display:inline-block;margin-bottom:16px}</style></head>
 <body><div class="badge">⚡ Limited Early Access</div>
 <h1>HN Startup Hunter Pro</h1>
-<p>Unlimited search results + CSV export with direct emails.<br>Normally $9/month — <strong>first 50 users get 50% off for life.</strong></p>
+<p>Unlimited search results across all months + CSV export with direct emails.<br><strong>€29 one-time lifetime access</strong> — limited early access pricing.</p>
 <form id="f" onsubmit="sub(event)">
 <input type="email" id="e" placeholder="your@email.com" required>
 <button type="submit">Get 50% Off — Join Waitlist</button>
