@@ -850,6 +850,7 @@ async function runSearch() {
     if (!data.success) throw new Error(data.error || 'Unknown error');
 
     currentResults = data.results;
+    window.isProUser = data.is_pro || false;
 
     if (data.results.length === 0) {
       document.getElementById('emptyState').classList.add('active');
@@ -922,7 +923,7 @@ async function runSearch() {
 
 async function exportCSV() {
   if (!currentResults.length) { showToast('Search first to get results'); return; }
-  if (currentResults.length > 20) {
+  if (!window.isProUser) {
     showToast('CSV export is Pro — unlock all results for €29 lifetime');
     setTimeout(function() {
       window.open('https://lukassbrad.gumroad.com/l/esiayp', '_blank');
