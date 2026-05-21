@@ -855,21 +855,24 @@ async function runSearch() {
       document.getElementById('emptyState').classList.add('active');
     } else {
       document.getElementById('resultsMeta').innerHTML =
-        'Found <strong>' + data.count + '</strong> matching companies from <strong>' + data.total_scanned + '</strong> posts scanned';
+        'Found <strong>' + (data.total_available || data.count) + '</strong> matching companies from <strong>' + (data.total_scanned || 'multiple') + '</strong> posts scanned';
       var FREE_LIMIT = 20;
       var allResults = data.results;
       var freeResults = allResults.slice(0, FREE_LIMIT);
-      var lockedCount = allResults.length - FREE_LIMIT;
+      // FIXED: Use data.locked + data.total_available from API (API caps at 20 for free users)
+      var isLocked = data.locked === true;
+      var totalAvailable = (data.total_available && data.total_available > allResults.length) ? data.total_available : allResults.length;
+      var lockedCount = isLocked ? Math.max(0, totalAvailable - FREE_LIMIT) : Math.max(0, allResults.length - FREE_LIMIT);
       
-      if (allResults.length <= FREE_LIMIT) {
-        // All results fit in free tier
+      if (!isLocked && allResults.length <= FREE_LIMIT) {
+        // All results fit in free tier - no paywall
         document.getElementById('cardsGrid').innerHTML = freeResults.map(renderCard).join('');
       } else {
-        // Show free results + paywall
+        // Show free results + paywall (triggered by locked flag OR >20 results)
         var paywallHtml = freeResults.map(renderCard).join('');
         
         // Build ghost cards for blur effect
-        var ghostCards = allResults.slice(FREE_LIMIT, FREE_LIMIT + 4).map(function(r) {
+        var ghostCards = allResults.slice(FREE_LIMIT - 3, FREE_LIMIT).map(function(r) {
           return renderCard(r);
         }).join('');
         
@@ -880,9 +883,9 @@ async function runSearch() {
           '<div class="paywall-overlay">' +
             '<div class="paywall-card">' +
               '<h3>🔒 ' + lockedCount + ' more companies hidden</h3>' +
-              '<p>Upgrade to Pro to unlock all <strong>' + allResults.length + '</strong> matching companies — plus email export, email-only filter, and multi-month search.</p>' +
+              '<p>Upgrade to Pro to unlock all <strong>' + totalAvailable + '</strong> matching companies — plus email export, email-only filter, and multi-month search.</p>' +
               '<ul>' +
-                '<li>All ' + allResults.length + ' matching companies (not just 20)</li>' +
+                '<li>All ' + totalAvailable + ' matching companies (not just 20)</li>' +
                 '<li>CSV export with email column</li>' +
                 '<li>Filter: companies with direct email only</li>' +
                 '<li>Search any HN hiring thread, not just latest</li>' +
