@@ -883,6 +883,14 @@ async function runSearch() {
               '</ul>' +
               '<a href="' + proUrl + '" target="_blank" class="paywall-btn">Unlock Pro — €29 lifetime →</a>' +
               '<p class="paywall-count">One-time payment · Instant access</p>' +
+              '<div style="margin-top:14px;border-top:1px solid #e5e7eb;padding-top:12px;">' +
+                '<p style="font-size:0.78rem;color:#6b7280;margin-bottom:8px;">Not ready? Get our launch deal notification:</p>' +
+                '<div style="display:flex;gap:8px;">' +
+                  '<input type="email" id="paywallEmail" placeholder="your@email.com" style="flex:1;padding:8px 10px;border:1px solid #d1d5db;border-radius:8px;font-size:0.85rem;min-width:0;" />' +
+                  '<button onclick="submitPaywallEmail(event)" style="padding:8px 12px;background:#374151;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:0.85rem;white-space:nowrap;">Notify me</button>' +
+                '</div>' +
+                '<p id="paywallEmailMsg" style="font-size:0.78rem;color:#10b981;margin-top:6px;display:none;">✓ We\'ll send you the deal.</p>' +
+              '</div>' +
             '</div>' +
           '</div>' +
         '</div>';
@@ -928,6 +936,25 @@ async function exportCSV() {
     showToast('Export failed — please try again');
   }
 }
+
+    function submitPaywallEmail(e) {
+      e.preventDefault();
+      var email = (document.getElementById('paywallEmail') || {}).value || '';
+      email = email.trim();
+      if (!email || !email.includes('@')) return;
+      var btn = e.target;
+      btn.disabled = true;
+      fetch('/waitlist', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'email=' + encodeURIComponent(email)
+      }).then(function() {
+        var msg = document.getElementById('paywallEmailMsg');
+        if (msg) msg.style.display = 'block';
+      }).catch(function() {
+        btn.disabled = false;
+      });
+    }
 </script>
 </body>
 </html>
