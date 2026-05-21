@@ -966,6 +966,15 @@ async function exportCSV() {
         btn.disabled = false;
       });
     }
+
+// Auto-demo: pre-fill with 'python' and run on page load so PH visitors immediately see value
+window.addEventListener('load', function() {
+  var input = document.getElementById('skillsInput');
+  if (input && !input.value.trim()) {
+    input.value = 'python';
+    runSearch();
+  }
+});
 </script>
 </body>
 </html>
