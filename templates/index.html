@@ -954,10 +954,11 @@ async function exportCSV() {
       if (!email || !email.includes('@')) return;
       var btn = e.target;
       btn.disabled = true;
+      var query = (document.getElementById('skillsInput') || {}).value || '';
       fetch('/waitlist', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'email=' + encodeURIComponent(email)
+        body: 'email=' + encodeURIComponent(email) + '&query=' + encodeURIComponent(query)
       }).then(function() {
         var msg = document.getElementById('paywallEmailMsg');
         if (msg) msg.style.display = 'block';
