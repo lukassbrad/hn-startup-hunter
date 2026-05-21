@@ -80,7 +80,9 @@ def fetch_hn_item(item_id):
 def get_hiring_threads(n=3):
     threads = []
     try:
-        url = "https://hn.algolia.com/api/v1/search?query=Ask+HN+Who+is+hiring&tags=story,ask_hn&hitsPerPage=10"
+        # Use search_by_date + author_whoishiring to get the actual monthly "Who is Hiring?" threads
+        # in chronological order (most recent first)
+        url = "https://hn.algolia.com/api/v1/search_by_date?query=Ask+HN+Who+is+hiring&tags=story,ask_hn,author_whoishiring&hitsPerPage=10"
         with urllib.request.urlopen(url, timeout=10) as resp:
             data = json.loads(resp.read())
             for hit in data.get("hits", []):
