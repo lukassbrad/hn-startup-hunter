@@ -267,6 +267,30 @@ def export():
     response.headers["Content-Disposition"] = "attachment; filename=hn-startup-leads.csv"
     return response
 
+@app.route("/sample.csv", methods=["GET"])
+def sample_csv():
+    """Free sample CSV — 5 real companies from May 2026 HN hiring thread."""
+    sample_data = [
+        ["BetterDB", "Building the tooling ecosystem for Valkey (Redis fork). Observability tools: historical persistence, anomaly detection, Prometheus export.", "TypeScript, React, AWS, Kubernetes, Docker, PostgreSQL, Redis, Terraform", "Remote", "", "kristiyan@betterdb.com", "https://betterdb.com", "https://news.ycombinator.com/item?id=48026144"],
+        ["Starbridge", "Backend & AI engineering roles. Building enterprise integrations, large-scale scraping/parsing pipelines, and LLM-powered document analysis at scale.", "Python, TypeScript, React, Java, Kotlin, ML, LLM, AI", "Remote / Onsite", "", "recruiting@starbridge.ai", "https://starbridge.ai/careers", "https://news.ycombinator.com/item?id=47977858"],
+        ["Steel.dev", "Open-source browser infrastructure for AI agents. Browser pools, proxies, CAPTCHA handling. Hiring senior engineers.", "Rust, TypeScript, React, Node.js, AWS, GCP, Redis, AI", "Toronto", "$160k-$240k", "careers@steel.dev", "", "https://news.ycombinator.com/item?id=48054246"],
+        ["Adobe", "Forward Deployed Engineer — AI-powered systems, APIs, integrations. Hybrid/Onsite San Jose CA.", "Python, Java, AWS, GCP, Azure, Docker, Kubernetes, ML, AI", "San Jose CA (Hybrid)", "$208,300 - $301,600", "skatkar@adobe.com", "https://adobe.com", "https://news.ycombinator.com/item?id=48003121"],
+        ["Radar Labs", "Real-time location data APIs for developers. 100M+ devices, 200+ enterprise customers (McDonald's, Panera, Chipotle). Hiring engineers.", "Python, TypeScript, Node.js, React, AWS, Kafka, Redis, PostgreSQL", "Remote", "", "tim@radar.com", "https://radar.com", "https://news.ycombinator.com/item?id=47977858"],
+    ]
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Company", "Description", "Tech Stack", "Location", "Salary", "Recruiter Email", "Website", "HN Link"])
+    for row in sample_data:
+        writer.writerow(row)
+    output.write("\n# This is a free sample (5 of 193+ companies from May 2026 thread).\n")
+    output.write("# Pro access unlocks all results + CSV export for any search.\n")
+    output.write("# Upgrade: https://lukassbrad.gumroad.com/l/esiayp\n")
+    response = make_response(output.getvalue())
+    response.headers["Content-Type"] = "text/csv"
+    response.headers["Content-Disposition"] = "attachment; filename=hn-startup-sample-5-companies.csv"
+    return response
+
+
 @app.route("/webhook/lemonsqueezy", methods=["POST"])
 def lemonsqueezy_webhook():
     """Receive LemonSqueezy payment confirmation webhooks."""
