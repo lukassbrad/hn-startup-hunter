@@ -373,6 +373,8 @@
   .badge-onsite { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
   .badge-hybrid { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
   .badge-salary { background: #faf5ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+  .badge-match { background: #ecfdf5; color: #065f46; border: 1px solid #6ee7b7; font-size: 0.68rem; padding: 1px 5px; border-radius: 4px; font-weight: 700; }
+  .badge-match-full { background: #d1fae5; color: #065f46; border: 1px solid #34d399; }
 
   .card-hn-link {
     color: var(--text-muted);
@@ -764,6 +766,16 @@ function escHtml(s) {
   return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function parseTerms(q) {
+  return (q || '').toLowerCase().split(/[\s,+\/\-]+/).filter(function(s){ return s.length > 1; });
+}
+function matchScore(r, terms) {
+  if (!terms || !terms.length) return {score:0, total:0};
+  var text = ((r.tech_tags || []).join(' ') + ' ' + (r.description || '') + ' ' + (r.company || '')).toLowerCase();
+  var matched = terms.filter(function(t){ return text.indexOf(t) !== -1; });
+  return {score: matched.length, total: terms.length};
+}
+
 function renderCard(r) {
   var initial = (r.company || '?')[0].toUpperCase();
   var techHtml = '';
@@ -784,13 +796,20 @@ function renderCard(r) {
   }
 
   var salaryHtml = r.salary ? '<span class="badge badge-salary">' + escHtml(r.salary) + '</span>' : '';
+  var matchInfo = (window.currentMatchMap || {})[r.company] || {score:0, total:0};
+  var matchBadge = '';
+  if (matchInfo.total > 0 && matchInfo.score > 0) {
+    var cls = (matchInfo.score === matchInfo.total) ? 'badge badge-match badge-match-full' : 'badge badge-match';
+    var lbl = (matchInfo.score === matchInfo.total) ? '🎯 ' + matchInfo.score + '/' + matchInfo.total + ' skills' : '✓ ' + matchInfo.score + '/' + matchInfo.total + ' skills';
+    matchBadge = '<span class="' + cls + '">' + lbl + '</span>';
+  }
 
   return '<div class="card">' +
     '<div class="card-header">' +
       '<div class="company-initial">' + escHtml(initial) + '</div>' +
       '<div class="company-info">' +
         '<div class="company-name" title="' + escHtml(r.company) + '">' + escHtml(r.company) + '</div>' +
-        '<div class="company-meta">' + getLocationBadge(r.location) + salaryHtml + '</div>' +
+        '<div class="company-meta">' + getLocationBadge(r.location) + salaryHtml + matchBadge + '</div>' +
       '</div>' +
       '<a href="' + escHtml(r.hn_link) + '" target="_blank" class="card-hn-link">HN &nearr;</a>' +
     '</div>' +
@@ -859,6 +878,21 @@ async function runSearch() {
         'Found <strong>' + (data.total_available || data.count) + '</strong> matching companies from <strong>' + (data.total_scanned || 'multiple') + '</strong> posts scanned';
       var FREE_LIMIT = 20;
       var allResults = data.results;
+      // Skill-match sorting: rank by how many query terms match tech_tags/description
+      var _terms = parseTerms(skills);
+      if (_terms.length > 0) {
+        var _matchMap = {};
+        var _scored = allResults.map(function(r) {
+          var m = matchScore(r, _terms);
+          _matchMap[r.company] = m;
+          return {r: r, s: m.score};
+        });
+        _scored.sort(function(a, b){ return b.s - a.s; });
+        allResults = _scored.map(function(x){ return x.r; });
+        window.currentMatchMap = _matchMap;
+      } else {
+        window.currentMatchMap = {};
+      }
       var freeResults = allResults.slice(0, FREE_LIMIT);
       // FIXED: Use data.locked + data.total_available from API (API caps at 20 for free users)
       var isLocked = data.locked === true;
@@ -892,7 +926,8 @@ async function runSearch() {
                 '<li>Filter: companies with direct email only</li>' +
                 '<li>Search any HN hiring thread, not just latest</li>' +
               '</ul>' +
-              '<a href="' + proUrl + '" target="_blank" class="paywall-btn">Unlock Pro — €29 lifetime →</a>' +
+              '<a href="' + proUrl + '" target="_blank" class="paywall-btn">🚀 Unlock Pro — €29 lifetime →</a>' +
+              '<p style="font-size:0.78rem;color:#ff6600;margin:6px 0 0;font-weight:600;">🎉 Product Hunt Launch Special: use code <code>PRODUCTHUNT</code> for 50% off today</p>' +
               '<p class="paywall-count">One-time payment · Instant access</p>' +
               '<div style="margin-top:14px;border-top:1px solid #e5e7eb;padding-top:12px;">' +
                 '<p style="font-size:0.78rem;color:#6b7280;margin-bottom:8px;">Not ready today? Enter email for a free 5-company sample:</p>' +
