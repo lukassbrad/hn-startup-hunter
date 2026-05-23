@@ -356,11 +356,20 @@ def activate():
 API_KEYS_FILE = '/tmp/api_keys.json'
 
 def get_api_keys():
+    # Check env var first (persists across Render restarts)
+    env_keys_raw = os.environ.get('API_KEYS', '{}')
+    try:
+        keys = json.loads(env_keys_raw)
+    except:
+        keys = {}
+    # Merge with file-based keys (newly registered keys, transient)
     try:
         with open(API_KEYS_FILE) as f:
-            return json.load(f)
+            file_keys = json.load(f)
+            keys.update(file_keys)
     except:
-        return {}
+        pass
+    return keys
 
 def save_api_key(api_key, email, order_id):
     keys = get_api_keys()
