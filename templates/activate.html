@@ -44,10 +44,16 @@ async function activate() {
     });
     var data = await resp.json();
     if (resp.ok && data.status === "activated") {
-      showMsg("✅ Pro access activated! Redirecting you now…", "success");
-      setTimeout(function(){ window.location.href = "/"; }, 1500);
+      var apiMsg = "";
+      if (data.api_key) {
+        apiMsg = "<div style='margin-top:12px;background:#0f172a;padding:10px;border-radius:6px;font-family:monospace;font-size:0.85em;word-break:break-all;'>" +
+          "<strong style='color:#86efac'>Your API Key:</strong><br>" + data.api_key +
+          "<br><small style='color:#94a3b8'>Save this key. Docs: <a href='/api/docs' style='color:#818cf8'>/api/docs</a></small></div>";
+      }
+      showMsg("✅ Pro access activated!" + apiMsg, "success");
+      setTimeout(function(){ window.location.href = "/"; }, 4000);
     } else {
-      showMsg("❌ Email not found. Make sure you're using the email from your purchase receipt. <a href=\"https://bradauto.lemonsqueezy.com/checkout/buy/96ddcb80-0ed2-48af-a4e5-3fe87df49166\" style=\"color:#818cf8\" target=\"_blank\">Buy Pro →</a>", "error");
+      showMsg("❌ Email not found. Make sure you're using the email from your purchase receipt. <a href=\"https://lukassbrad.gumroad.com/l/esiayp\" style=\"color:#818cf8\" target=\"_blank\">Buy Pro →</a>", "error");
     }
   } catch(e) {
     showMsg("Network error – please try again.", "error");

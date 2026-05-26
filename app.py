@@ -310,13 +310,16 @@ def lemonsqueezy_webhook():
 
 @app.route("/webhook/gumroad", methods=["POST"])
 def gumroad_webhook():
-    """Receive Gumroad sale ping webhooks."""
+    """Receive Gumroad sale ping webhooks. Also provisions API key for Pro buyers."""
     try:
         data = request.form
         email = data.get("email", "").lower().strip()
         sale_id = data.get("sale_id", "") or data.get("permalink", "")
+        product_permalink = data.get("product_permalink", "")
         if email and "@" in email:
             save_pro_email(email, sale_id)
+            # Provision API key for any purchase (Pro Lifetime = API access included)
+            api_key = provision_api_key_for_email(email, sale_id)
             return "OK", 200
         return "ignored", 200
     except Exception as e:
@@ -336,13 +339,20 @@ def admin_add_pro():
 
 @app.route("/activate", methods=["GET", "POST"])
 def activate():
-    """Activate Pro access with purchase email."""
+    """Activate Pro access with purchase email. Returns API key too."""
     if request.method == "POST":
         email = request.form.get("email", "").lower().strip()
         if email in get_pro_emails():
             session["pro"] = True
             session["pro_email"] = email
-            resp = make_response(jsonify({"status": "activated", "message": "Pro access activated!"}))
+            # Get or provision an API key for this user
+            api_key = provision_api_key_for_email(email, "activation")
+            resp = make_response(jsonify({
+                "status": "activated",
+                "message": "Pro access activated!",
+                "api_key": api_key,
+                "api_docs": "https://hn-startup-hunter.onrender.com/api/docs"
+            }))
             resp.set_cookie("pro_email", email, max_age=365*24*3600, samesite="Lax")
             return resp
         return jsonify({"status": "not_found", "message": "Email not found. Please check your purchase email or contact support."}), 404
@@ -385,6 +395,18 @@ def is_valid_api_key(api_key):
         return False
     keys = get_api_keys()
     return api_key in keys and keys[api_key].get('active', False)
+
+def provision_api_key_for_email(email, order_id):
+    """Get existing API key for email, or create a new one. Returns the key."""
+    # Check if this email already has a key
+    keys = get_api_keys()
+    for k, v in keys.items():
+        if v.get('email', '').lower() == email.lower() and v.get('active', False):
+            return k
+    # Generate a new key
+    new_key = hashlib.md5(f"{email}:{order_id}:{os.urandom(16).hex()}".encode()).hexdigest()
+    save_api_key(new_key, email, order_id)
+    return new_key
 
 
 
@@ -559,8 +581,9 @@ h1,h2{color:#ff6600}pre{background:#0d0d1a;padding:12px;border-radius:6px;overfl
 .cta{background:#ff6600;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block;margin:10px 0}
 </style></head><body>
 <h1>HN Startup Hunter API</h1>
-<p>Programmatic access to HN "Who is Hiring?" data. Perfect for recruiting tools and ATS integrations.</p>
-<a class="cta" href="https://hn-startup-hunter.onrender.com/waitlist">Get API Access — $49/mo &rarr;</a>
+<p>Programmatic access to HN "Who is Hiring?" data. Perfect for recruiting tools, ATS integrations, and job-search automation.</p>
+<a class="cta" href="https://lukassbrad.gumroad.com/l/esiayp">Get API Access — €29 one-time &rarr;</a>
+<p style="font-size:0.85em;color:#aaa;">API key included with Pro Lifetime access. Enter your purchase email at <a href="/activate" style="color:#ff9955">/activate</a> to get your key.</p>
 <h2>Search Endpoint</h2>
 <pre>GET /api/v1/search?api_key=YOUR_KEY&skills=python,fastapi&remote_only=true&limit=100</pre>
 <p><b>Parameters:</b></p>
@@ -581,8 +604,9 @@ h1,h2{color:#ff6600}pre{background:#0d0d1a;padding:12px;border-radius:6px;overfl
    "hn_link": "https://news.ycombinator.com/item?id=..."}
 ]}</pre>
 <h2>Pricing</h2>
-<p>$49/month. API key delivered within 24h of payment. Cancel anytime.</p>
-<a class="cta" href="https://hn-startup-hunter.onrender.com/waitlist">Subscribe Now &rarr;</a>
+<p><strong>€29 one-time</strong> — Pro Lifetime access includes full API. No monthly fees, no key rotation.</p>
+<a class="cta" href="https://lukassbrad.gumroad.com/l/esiayp">Get Pro + API Access &rarr;</a>
+<p style="font-size:0.85em;color:#aaa;">After purchase: visit <a href="/activate" style="color:#ff9955">/activate</a> with your email to get your API key instantly.</p>
 </body></html>"""
     return Response(html, content_type='text/html')
 
